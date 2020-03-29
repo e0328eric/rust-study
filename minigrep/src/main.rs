@@ -7,14 +7,18 @@ fn main() {
     let args: Vec<String> = env::args().collect();
 
     let config = Config::new(&args).unwrap_or_else(|err| {
-        println!("Problem parsing arguments: {}", err);
+        eprintln!("Problem parsing arguments: {}", err);
         process::exit(1);    // pub fn exit(code: u32) -> !
     });
 
-    println!("Searching for {}", config.query);
+    if config.case_sensitive {
+        println!("Searching for {}", config.query);
+    } else {
+        println!("Searching for {} not considering uppercase", config.query);
+    }
     println!("In file {}", config.filename);
 
     if let Err(e) = minigrep::run(config) {
-        println!("Application error: {}", e); process::exit(1);
+        eprintln!("Application error: {}", e); process::exit(1);
     }
 }
