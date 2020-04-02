@@ -1,38 +1,15 @@
 #![allow(unused)]
 
-struct Counter {
-    count: u32,
+fn add_one(x: i32) -> i32 {
+    x + 1
 }
 
-impl Counter {
-    fn new(init: u32) -> Counter {
-        Counter { count: init }
-    }
-}
-
-impl Iterator for Counter {
-    type Item = u32;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.count == 1 {
-            None
-        } else if self.count % 2 == 0 {
-            self.count /= 2;
-            Some(self.count)
-        } else {
-            self.count = 3 * self.count + 1;
-            Some(self.count)
-        }
-    }
+fn do_twice(f: fn(i32) -> i32, arg: i32) -> i32 {
+    f(arg) + f(arg)
 }
 
 fn main() {
-    let mut count = Counter::new(15);
-    let mut vec = Vec::new();
+    let answer = do_twice(add_one, 5);
 
-    for i in count {
-        vec.push(i.pow(2));
-    }
-
-    println!("{:?}", vec);
+    println!("The answer is: {}", answer);
 }
