@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.20 (TeX Live 2019) (preloaded format=pdftex 2020.1.8)  6 APR 2020 14:52
+This is pdfTeX, Version 3.14159265-2.6-1.40.20 (TeX Live 2019) (preloaded format=pdftex 2020.1.8)  9 APR 2020 23:33
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -6,7 +6,7 @@ entering extended mode
 (./test.tex [1{/usr/local/texlive/2019/texmf-var/fonts/map/pdftex/updmap/pdftex
 .map}] )</usr/local/texlive/2019/texmf-dist/fonts/type1/public/amsfonts/cm/cmr1
 0.pfb>
-Output written on test.pdf (1 page, 14595 bytes).
+Output written on test.pdf (1 page, 14836 bytes).
 PDF statistics:
  12 PDF objects out of 1000 (max. 8388607)
  7 compressed objects within 1 object stream

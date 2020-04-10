@@ -1,30 +1,66 @@
-use std::process::Command;
+use std::ffi::OsStr;
+use std::process::{self, Command};
+use std::path::PathBuf;
 
-pub struct TeXEngine(pub String);
+use crate::utils;
 
-#[derive(PartialEq)]
-pub enum TeXorLaTeX {
-    TeX,
-    LaTeX,
+pub struct TeXEngine<'a, 'b, 'c>(pub &'a str, pub &'b Vec<&'c PathBuf>);
+
+impl<'a, 'b, 'c> TeXEngine<'a, 'b, 'c> {
+    pub fn run_once(&self) -> bool {
+        let mut succ_or_fail: Vec<bool> = Vec::new();
+        for file in self.1 {
+            match Command::new(&self.0).arg(file).status() {
+                Ok(a) => succ_or_fail.push(!(a.success())),
+                Err(e) => {
+                    eprintln!("autotex Error : {}", e);
+                    succ_or_fail.push(true);
+                },
+            }
+        }
+
+        succ_or_fail.iter().all(|&x| x)
+    }
 }
 
-impl TeXEngine {
-    pub fn run_once(&self, filename: &str) -> bool {
-        match Command::new(&self.0).arg(filename).status() {
-            Ok(a) => !(a.success()),
-            Err(e) => {
-                eprintln!("autotex Error : {}", e);
-                true
-            },
+pub fn run_engine(args: &[String], fname: &str) {
+    let engine = take_engine(&args[1..]).unwrap_or_else(|err| {
+        eprintln!("autotex Error: {}", err);
+        process::exit(1);
+    });
+    let fname_ = PathBuf::from(fname);
+    let filename = vec![&fname_];
+    // Yet it does not support the option -cd
+    if utils::is_extension_exists(&None, "bib") {
+        let bibfn = PathBuf::from(fname_.file_stem().unwrap());
+        let bibfilename = vec![&bibfn];
+        let run_engine = vec![
+            TeXEngine(engine, &filename),
+            TeXEngine("bibtex", &bibfilename),
+            TeXEngine(engine, &filename),
+            TeXEngine(engine, &filename)
+        ];
+        for i in run_engine {
+            let j = i.run_once();
+            if j { break; }
         }
-    }
-
-    pub fn run(vec: &Vec<Self>, filename: &str) {
-        for i in vec {
-            let j = i.run_once(filename);
-            if j {
-                break;
-            }
+    } else if utils::is_extension_exists(&None, "idx") {
+        let mkindfn = utils::get_files(&None).iter()
+            .filter(|x| x.extension() == Some(OsStr::new("idx"))).collect();
+        let run_engine = vec![
+            TeXEngine(engine, &filename),
+            TeXEngine("makeindex", &mkindfn),
+            TeXEngine(engine, &filename),
+            TeXEngine(engine, &filename)
+        ];
+        for i in run_engine {
+            let j = i.run_once();
+            if j { break; }
+        }
+    } else {
+        for _i in 0..2 {
+            let j = TeXEngine(engine, &filename).run_once();
+            if j { break; }
         }
     }
 }
@@ -40,20 +76,19 @@ pub fn is_engine_args(arg: &str) -> Result<usize, &str> {
     }
 }
 
-pub fn take_engine(args: &[String]) -> Result<(TeXorLaTeX, &str), &str> {
+pub fn take_engine(args: &[String]) -> Result<&str, &str> {
     let engines_list = vec![
         "pdftex", "tex", "xetex", "luatex",
         "pdflatex", "latex", "xelatex", "lualatex"
     ];
     let use_latex = String::from("-la");
     match args.len() {
-        0 => Ok((TeXorLaTeX::TeX, "pdftex")),
+        0 => Ok("pdftex"),
         1 => {
             if args[0] == String::from("-la") {
-                Ok((TeXorLaTeX::LaTeX, "pdflatex"))
+                Ok("pdflatex")
             } else {
-                let n = is_engine_args(&args[0])?;
-                Ok((TeXorLaTeX::TeX, engines_list[n]))
+                Ok(engines_list[is_engine_args(&args[0])?])
             }
         }
         2 => {
@@ -61,7 +96,7 @@ pub fn take_engine(args: &[String]) -> Result<(TeXorLaTeX, &str), &str> {
                 let other_option = args.iter()
                     .filter(|x| **x != String::from("-la")).next().unwrap();
                 let n = is_engine_args(&other_option)?;
-                Ok((TeXorLaTeX::LaTeX, engines_list[n+4]))
+                Ok(engines_list[n+4])
             } else {
                 Err("Cannot use two distinct TeX options")
             }
