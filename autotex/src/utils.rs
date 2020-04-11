@@ -1,4 +1,4 @@
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::process;
 use std::fs;
 use std::ffi::OsStr;
@@ -16,33 +16,32 @@ pub fn is_valid_args(args: Vec<String>) -> Vec<String>{
 }
 
 // File name and modified time collector
-pub fn get_files(dir: &Option<PathBuf>) -> Vec<PathBuf> {
-    let dir_d = if let Some(dirdir) = dir {
-        dirdir
-    } else {
-        PathBuf::from("./")
-    };
+pub fn get_files(dir: &Option<&str>) -> Vec<PathBuf> {
+    let dir_d = dir.unwrap_or_else(|| "./");
     let mut lst_files: Vec<PathBuf> = Vec::new();
-    for file in fs::read_dir(dir_d.to_str().unwrap()).unwrap().map(|x| x.unwrap()) {
+    for file in fs::read_dir(dir_d).unwrap().map(|x| x.unwrap()) {
         if file.path().is_dir() {
-            lst_files.append(&mut get_files(&Some(file.path())));
+            lst_files.append(&mut get_files(&file.path().to_str()));
         } else {
             lst_files.push(file.path());
         }
     }
-
     lst_files
 }
 
-pub fn get_file_times(dir: &Option<&'static str>) -> Vec<Time> {
-    let dir_d = dir.unwrap_or_else(|| "./");
-    fs::read_dir(dir_d).unwrap()
-        .map(|n| n.unwrap().metadata().unwrap().modified().unwrap())
-        .collect()
+pub fn get_file_times(dir: &Option<&str>) -> Vec<Time> {
+    let read_a_dir = get_files(&dir);
+    let valid_extension = vec![
+        Some(OsStr::new("tex")), Some(OsStr::new("aux")),
+        Some(OsStr::new("toc")), Some(OsStr::new("bib")),
+        Some(OsStr::new("idx"))
+    ];
+    read_a_dir.iter().filter(|file_| valid_extension.contains(&file_.extension()))
+    .map(|n| n.metadata().unwrap().modified().unwrap()).collect()
 }
 
 // Check the given extension exists
-pub fn is_extension_exists(dir: &Option<PathBuf>, ext: &'static str) -> bool {
+pub fn is_extension_exists(dir: &Option<&'static str>, ext: &'static str) -> bool {
     let lst = get_files(&dir);
     lst.iter().any(|x| x.extension() == Some(OsStr::new(ext)))
 }

@@ -23,7 +23,7 @@ impl<'a, 'b, 'c> TeXEngine<'a, 'b, 'c> {
     }
 }
 
-pub fn run_engine(args: &[String], fname: &str) {
+pub fn run_engine(args: &Vec<&String>, fname: &str) {
     let engine = take_engine(&args[1..]).unwrap_or_else(|err| {
         eprintln!("autotex Error: {}", err);
         process::exit(1);
@@ -45,7 +45,8 @@ pub fn run_engine(args: &[String], fname: &str) {
             if j { break; }
         }
     } else if utils::is_extension_exists(&None, "idx") {
-        let mkindfn = utils::get_files(&None).iter()
+        let mkindfn1 = utils::get_files(&None);
+        let mkindfn = mkindfn1.iter()
             .filter(|x| x.extension() == Some(OsStr::new("idx"))).collect();
         let run_engine = vec![
             TeXEngine(engine, &filename),
@@ -76,7 +77,7 @@ pub fn is_engine_args(arg: &str) -> Result<usize, &str> {
     }
 }
 
-pub fn take_engine(args: &[String]) -> Result<&str, &str> {
+pub fn take_engine<'a>(args: &'a[&'a String]) -> Result<&'a str, &'a str> {
     let engines_list = vec![
         "pdftex", "tex", "xetex", "luatex",
         "pdflatex", "latex", "xelatex", "lualatex"
@@ -85,16 +86,16 @@ pub fn take_engine(args: &[String]) -> Result<&str, &str> {
     match args.len() {
         0 => Ok("pdftex"),
         1 => {
-            if args[0] == String::from("-la") {
+            if *args[0] == String::from("-la") {
                 Ok("pdflatex")
             } else {
                 Ok(engines_list[is_engine_args(&args[0])?])
             }
         }
         2 => {
-            if args[0] == use_latex || args[1] == use_latex {
+            if *args[0] == use_latex || *args[1] == use_latex {
                 let other_option = args.iter()
-                    .filter(|x| **x != String::from("-la")).next().unwrap();
+                    .filter(|x| ***x != String::from("-la")).next().unwrap();
                 let n = is_engine_args(&other_option)?;
                 Ok(engines_list[n+4])
             } else {
