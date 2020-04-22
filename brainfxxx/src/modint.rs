@@ -1,7 +1,7 @@
-use std::ops::{Add, Sub, Mul, Div};
+use std::ops::{Add, Sub};
 
 // ModInt Type
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone, Copy)]
 pub struct ModInt(pub u8);
 
 impl ModInt {
@@ -21,19 +21,5 @@ impl Sub for ModInt {
     type Output = ModInt;
     fn sub(self, rhs: Self) -> Self::Output {
         ModInt(self.0.overflowing_sub(rhs.0).0)
-    }
-}
-
-impl Mul for ModInt {
-    type Output = ModInt;
-    fn mul(self, rhs: Self) -> Self::Output {
-        ModInt(self.0.overflowing_mul(rhs.0).0)
-    }
-}
-
-impl Div for ModInt {
-    type Output = ModInt;
-    fn div(self, rhs: Self) -> Self::Output {
-        ModInt(self.0.overflowing_div(rhs.0).0)
     }
 }
