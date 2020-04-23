@@ -11,7 +11,7 @@ pub struct Tape {
 impl Tape {
     pub fn new() -> Self {
         Self {
-            tape: VecDeque::new(),
+            tape: VecDeque::from(vec![ModInt(0)]),
             point: 0,
         }
     }
@@ -45,15 +45,7 @@ impl Tape {
         self.tape[self.point]
     }
 
-    pub fn change(&mut self, target: usize, change: ModInt) {
-        self.tape[target] = change;
-    }
-
-    pub fn erase(&mut self, target: usize) {
-        if target == self.tape.len() {
-            self.tape.remove(target);
-        } else {
-            self.change(target, ModInt(0));
-        }
+    pub fn change(&mut self, change: ModInt) {
+        self.tape[self.point] = change;
     }
 }

@@ -1,32 +1,21 @@
-#![allow(unused)]
+use std::env;
+use std::fs;
+
 mod modint;
 mod tape;
+mod lexer;
+mod parser;
+mod interpreter;
 
 use crate::tape::Tape;
-use crate::modint::ModInt;
 
 fn main() {
-    // Make a new Turing Tape
+    let args: Vec<String> = env::args().collect();
+    let filename = &args[1];
+    let input = if args.len() > 2 { Some(&args[2]) } else { None };
+    let script = fs::read_to_string(filename).unwrap();
     let mut tape = Tape::new();
-
-    // Add things on the right
-    tape.add_right(ModInt(2));
-    tape.add_right(ModInt(5));
-    tape.add_right(ModInt(7));
-    println!("{:?}", tape);
-
-    // Add things on the left
-    tape.add_left(ModInt(1));
-    tape.add_left(ModInt(3));
-    tape.add_left(ModInt(4));
-    println!("{:?}", tape);
-
-    // Move pointer to third position
-    tape.move_right();
-    tape.move_right();
-    tape.move_right();
-    println!("{:?}", tape);
-
-    // Take a integer in that position
-    println!("{:?}", tape.take_val());
+    let parsed = parser::parser(&lexer::lex(&script));
+    let result = interpreter::interpreter(&parsed, &mut tape, &(input, 0));
+    println!("{}", result);
 }
