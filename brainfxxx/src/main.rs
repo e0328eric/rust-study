@@ -16,6 +16,6 @@ fn main() {
     let script = fs::read_to_string(filename).unwrap();
     let mut tape = Tape::new();
     let parsed = parser::parser(&lexer::lex(&script));
-    let result = interpreter::interpreter(&parsed, &mut tape, &(input, 0));
+    let result = interpreter::interpreter(&parsed, &mut tape, &mut (input, 0));
     println!("{}", result);
 }
