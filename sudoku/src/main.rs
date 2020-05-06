@@ -1,5 +1,4 @@
 #![deny(missing_docs)]
-#![allow(unused)]
 
 //! A Sudoku game.
 
