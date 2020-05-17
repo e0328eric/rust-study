@@ -1,8 +1,8 @@
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Token {
     ILLEGAL, EOF,
     // Identifiers + literals
-    IDENT, INT,
+    IDENT(String), INT(isize),
     // Operators
     ASSIGN, PLUS,
     // Delimiters
@@ -20,6 +20,15 @@ pub struct Lexer {
     ch: u8,
 }
 
+pub const KEYWORDS: [(&str, Token); 2] = [
+    ("fn", Token::FUNCTION),
+    ("let", Token::LET)
+];
+
+fn is_letter(ch: u8) -> bool {
+    b'a' <= ch && ch <= b'z' || b'A' <= ch && ch <= b'Z' || ch == b'_'
+}
+
 impl Lexer {
     pub fn new(input: &str) -> Self {
         Lexer {
@@ -30,7 +39,27 @@ impl Lexer {
         }
     }
 
-    fn take_token(&self) -> Token {
+    fn read_char(&mut self) {
+        if self.read_position >= self.input.len() {
+            self.ch = 0;
+        } else {
+            self.ch = self.input.as_bytes()[self.read_position];
+        }
+        self.position = self.read_position;
+        self.read_position += 1;
+    }
+
+    fn read_identifier(&mut self) -> String {
+        let position = self.position;
+        while is_letter(self.ch) {
+            self.read_char();
+        }
+        self.position -= 1;
+        self.read_position -= 1;
+        String::from_utf8_lossy(&self.input.as_bytes()[position..=self.position]).to_string()
+    }
+
+    fn take_token(&mut self) -> Token {
         match self.ch {
             b'=' => Token::ASSIGN,
             b';' => Token::SEMICOLON,
@@ -40,8 +69,17 @@ impl Lexer {
             b')' => Token::RPAREN,
             b'{' => Token::LBRACE,
             b'}' => Token::RBRACE,
+            b'a'..=b'z' | b'A'..=b'Z' | b'_' => {
+                    let letter = self.read_identifier();
+                    let corr_tok = KEYWORDS.iter().find(|&x| x.0 == &letter);
+                    if corr_tok.is_some() {
+                        corr_tok.unwrap().1.clone()
+                    } else {
+                        Token::IDENT(letter)
+                    }
+                },
             0 => Token::EOF,
-            _ => Token::ILLEGAL,
+            _ => Token::ILLEGAL
         }
     }
 }
@@ -51,14 +89,9 @@ impl Iterator for Lexer {
     fn next(&mut self) -> Option<Self::Item> {
         if self.read_position >= self.input.len() + 1 {
             return None;
-        } else if self.read_position == self.input.len() {
-            self.ch = 0;
-        } else {
-            self.ch = self.input.as_bytes()[self.read_position];
         }
-        self.position = self.read_position;
-        self.read_position += 1;
-    Some(self.take_token())
+        self.read_char();
+        Some(self.take_token())
     }
 }
 
@@ -67,7 +100,7 @@ mod test {
     use super::*;
 
     #[test]
-    fn test_next_token() {
+    fn basic_lexing() {
         let input = "=+(){?},;";
         let lex = Lexer::new(input);
         let output: Vec<Token> = lex.collect();
@@ -82,6 +115,25 @@ mod test {
             Token::COMMA,
             Token::SEMICOLON,
             Token::EOF,
+        ];
+        assert_eq!(output, expected);
+    }
+
+    #[test]
+    fn lex_identifier() {
+        let input = "let=foo=bar}fn;";
+        let lex = Lexer::new(input);
+        let output: Vec<Token> = lex.collect();
+        let expected = vec![
+            Token::LET,
+            Token::ASSIGN,
+            Token::IDENT(String::from("foo")),
+            Token::ASSIGN,
+            Token::IDENT(String::from("bar")),
+            Token::RBRACE,
+            Token::FUNCTION,
+            Token::SEMICOLON,
+            Token::EOF
         ];
         assert_eq!(output, expected);
     }
