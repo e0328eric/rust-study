@@ -26,7 +26,7 @@ pub const KEYWORDS: [(&str, Token); 2] = [
 ];
 
 fn is_letter(ch: u8) -> bool {
-    b'a' <= ch && ch <= b'z' || b'A' <= ch && ch <= b'Z' || ch == b'_'
+    ch.is_ascii_alphabetic() || ch == b'_'
 }
 
 impl Lexer {
@@ -59,7 +59,20 @@ impl Lexer {
         String::from_utf8_lossy(&self.input.as_bytes()[position..=self.position]).to_string()
     }
 
+    fn read_number(&mut self) -> String {
+        let position = self.position;
+        while self.ch.is_ascii_digit() {
+            self.read_char();
+        }
+        self.position -= 1;
+        self.read_position -= 1;
+        String::from_utf8_lossy(&self.input.as_bytes()[position..=self.position]).to_string()
+    }
+
     fn take_token(&mut self) -> Token {
+        if self.ch.is_ascii_whitespace() {
+            self.read_char()
+        }
         match self.ch {
             b'=' => Token::ASSIGN,
             b';' => Token::SEMICOLON,
@@ -69,7 +82,8 @@ impl Lexer {
             b')' => Token::RPAREN,
             b'{' => Token::LBRACE,
             b'}' => Token::RBRACE,
-            b'a'..=b'z' | b'A'..=b'Z' | b'_' => {
+            0 => Token::EOF,
+            _ if is_letter(self.ch) => {
                     let letter = self.read_identifier();
                     let corr_tok = KEYWORDS.iter().find(|&x| x.0 == &letter);
                     if corr_tok.is_some() {
@@ -78,7 +92,9 @@ impl Lexer {
                         Token::IDENT(letter)
                     }
                 },
-            0 => Token::EOF,
+            _ if self.ch.is_ascii_digit() => {
+                Token::INT(self.read_number().parse().unwrap())
+            }
             _ => Token::ILLEGAL
         }
     }
@@ -121,7 +137,7 @@ mod test {
 
     #[test]
     fn lex_identifier() {
-        let input = "let=foo=bar}fn;";
+        let input = "let= foo = bar}fn;123";
         let lex = Lexer::new(input);
         let output: Vec<Token> = lex.collect();
         let expected = vec![
@@ -133,6 +149,7 @@ mod test {
             Token::RBRACE,
             Token::FUNCTION,
             Token::SEMICOLON,
+            Token::INT(123),
             Token::EOF
         ];
         assert_eq!(output, expected);
