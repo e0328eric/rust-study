@@ -1,1 +1,0 @@
-/home/almagest/GitHub/rust-study/interpreter/target/debug/interpreter-c03c0e3240bf0d15: /home/almagest/GitHub/rust-study/interpreter/src/lexer.rs /home/almagest/GitHub/rust-study/interpreter/src/main.rs
