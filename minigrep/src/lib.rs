@@ -1,93 +1,118 @@
-use std::error::Error;
-use std::fs;
-use std::env;
+use std::boxed::Box;
+use std::option::Option;
+use std::result::Result;
+use Maybe::*;
 
-pub struct Config {
-    pub query: String,
-    pub filename: String,
-    pub case_sensitive: bool,
+#[derive(Debug, PartialEq, Eq)]
+enum Maybe<T> {
+    Nothing,
+    Just(T),
 }
 
-impl Config {
-    pub fn new(mut args: std::env::Args) -> Result<Config, &'static str> {
-        args.next();
+// Let's see at Haskell definition about Functor
+// class Functor F where
+//     fmap :: (a -> b) -> F a -> F b
+// Using Trait generic to copycat this definition
+// A == a
+// B == b
+// Self == F a
+// Output == F b
+// F == (a -> b)
+pub trait Functor<'a, A, B, F>
+    where
+        A: 'a,
+        F: Fn(&'a A) -> B {
+    type Output;
+    fn fmap(&'a self, f: F) -> Self::Output;
+}
 
-        let query = match args.next() {
-            Some(arg) => arg,
-            None => return Err("Didn't get a query string"),
-        };
+pub fn fmap<'a, A, B, X, F>(x: &'a X, f: F) -> X::Output
+    where
+        F: Fn(&'a A) -> B,
+        X: Functor<'a, A, B, F> {
+    x.fmap(f)
+}
 
-        let filename = match args.next() {
-            Some(arg) => arg,
-            None => return Err("Didn't get a file name"),
-        };
+impl<'a, A, B, F> Functor<'a, A, B, F> for Maybe<A>
+    where
+        A: 'a,
+        F: Fn(&'a A) -> B {
 
-        let case_sensitive = env::var("CASE_INSENSITIVE").is_err();
-
-        Ok(Config { query, filename, case_sensitive })
+    type Output = Maybe<B>;
+    fn fmap(&'a self, f: F) -> Maybe<B> {
+        match *self {
+            Just(ref x) => Just(f(x)),
+            Nothing => Nothing,
+        }
     }
 }
 
-pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
-    let contents = fs::read_to_string(config.filename)?;
-
-    let results = if config.case_sensitive {
-        search(&config.query, &contents)
-    } else {
-        search_case_insensitive(&config.query, &contents)
-    };
-
-    for line in results {
-        println!("{}", line);
+impl<'a, A, B, F> Functor<'a, A, B, F> for Box<A>
+    where
+        A: 'a,
+        F: Fn(&'a A) -> B {
+    type Output = Box<B>;
+    fn fmap(&'a self, f: F) -> Box<B> {
+        Box::new(f(&**self))
     }
-
-    Ok(())
 }
 
-pub fn search<'a>(query: &str, contents: &'a str) -> Vec<&'a str> {
-    contents.lines()
-            .filter(|line| line.contains(query))
-            .collect()
+impl<'a, A, B, F> Functor<'a, A, B, F> for Option<A>
+    where
+        A: 'a,
+        F: Fn(&'a A) -> B {
+    type Output = Option<B>;
+    fn fmap(&'a self, f: F) -> Option<B> {
+        self.as_ref().map(|x| f(&x))
+    }
 }
 
-pub fn search_case_insensitive<'a>(query: &str, contents: &'a str) -> Vec<&'a str> {
-    let query = query.to_lowercase();
-    contents.lines()
-            .filter(|line| line.to_lowercase().contains(&query))
-            .collect()
+impl<'a, A, B, E, F> Functor<'a, A, B, F> for Result<A, E>
+    where
+        A: 'a,
+        E: Copy,
+        F: Fn(&'a A) -> B {
+    type Output = Result<B, E>;
+    fn fmap(&'a self, f: F) -> Result<B, E> {
+        match *self {
+            Ok(ref x) => Ok(f(x)),
+            Err(e) => Err(e)
+        }
+    }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+#[test]
+fn it_works_with_maybe() {
+    let just = Just(7);
+    let nothing = fmap(&Nothing, |x| x + 1);
+    let other = fmap(&just, |x| x + 1);
+    assert_eq!(nothing, Nothing);
+    assert_eq!(other, Just(8));
+}
 
-    #[test]
-    fn case_sensitive() {
-        let query = "duct";
-        let contents = "\
-        Rust:
-safe, fast, productive.
-Pick three
-Duct tape.";
+#[test]
+fn it_works_with_box() {
+  let ax = Box::new(0);
+  let bx = fmap(&ax, |a| a + 1);
+  let cx = fmap(&ax, |a| a + 2);
+  assert_eq!(bx, Box::new(1));
+  assert_eq!(cx, Box::new(2));
+}
 
-        assert_eq!(
-            vec!["safe, fast, productive."],
-            search(query, contents)
-        );
-    }
+#[test]
+fn it_works_with_option() {
+  let ax = Option::Some(0);
+  let bx = fmap(&ax, |a| a + 1);
+  let cx = fmap(&ax, |a| a + 2);
+  assert_eq!(bx, Option::Some(1));
+  assert_eq!(cx, Option::Some(2));
+}
 
-    #[test]
-    fn case_insensitive() {
-        let query = "rUsT";
-        let contents = "\
-        Rust:
-safe, fast, productive.
-Pick three.
-Trust me.";
-
-        assert_eq!(
-            vec!["Rust:", "Trust me."],
-            search_case_insensitive(query, contents)
-        );
-    }
+#[test]
+fn it_works_with_result() {
+  let ax: Result<_, ()> = Result::Ok(0);
+  let bx = fmap(&ax, |a| a + 1);
+  let cx = fmap(&ax, |a| a + 2);
+  assert_eq!(bx, Result::Ok(1));
+  assert_eq!(cx, Result::Ok(2));
 }
