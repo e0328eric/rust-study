@@ -1,4 +1,5 @@
 #![allow(unused)]
+mod token;
 mod lexer;
 
 fn main() {
