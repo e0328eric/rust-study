@@ -1,4 +1,6 @@
-use crate::token::{is_letter, is_symbol, Token};
+pub mod token;
+
+use crate::lexer::token::{is_letter, is_symbol, Token};
 
 #[derive(Debug)]
 pub struct Lexer {
@@ -53,9 +55,9 @@ impl Lexer {
             self.read_char()
         }
         if is_symbol(self.ch) {
-            self.read_with_condition(|x| is_symbol(x)).into()
+            self.read_with_condition(is_symbol).into()
         } else if is_letter(self.ch) {
-            self.read_with_condition(|x| is_letter(x)).into()
+            self.read_with_condition(is_letter).into()
         } else if self.ch.is_ascii_digit() {
             self.read_with_condition(|x| x.is_ascii_digit()).into()
         } else {
@@ -67,7 +69,7 @@ impl Lexer {
 impl Iterator for Lexer {
     type Item = Token;
     fn next(&mut self) -> Option<Self::Item> {
-        if self.read_position >= self.input.len() + 1 {
+        if self.read_position > self.input.len() {
             None
         } else {
             self.read_char();
