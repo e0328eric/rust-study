@@ -1,3 +1,4 @@
+use std::str::FromStr;
 pub mod token;
 
 use crate::lexer::token::{is_letter, is_symbol, Token};
@@ -55,13 +56,13 @@ impl Lexer {
             self.read_char()
         }
         if is_symbol(self.ch) {
-            self.read_with_condition(is_symbol).into()
+            Token::from_str(self.read_with_condition(is_symbol).as_str()).unwrap()
         } else if is_letter(self.ch) {
-            self.read_with_condition(is_letter).into()
+            Token::from_str(self.read_with_condition(is_letter).as_str()).unwrap()
         } else if self.ch.is_ascii_digit() {
-            self.read_with_condition(|x| x.is_ascii_digit()).into()
+            Token::from_str(self.read_with_condition(|x| x.is_ascii_digit()).as_str()).unwrap()
         } else {
-            String::from_utf8(vec![self.ch]).unwrap().into()
+            Token::from_str(String::from_utf8(vec![self.ch]).unwrap().as_str()).unwrap()
         }
     }
 }
