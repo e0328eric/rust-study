@@ -77,7 +77,7 @@ impl FromStr for Token {
                     Ok(Token::IDENT(s.to_string()))
                 } else if s.as_bytes().iter().all(|&x| x.is_ascii_digit()) {
                     Ok(Token::INT(s.parse().unwrap()))
-                } else if s.as_bytes() == &[0] {
+                } else if s.as_bytes() == [0] {
                     Ok(Token::EOF)
                 } else {
                     Ok(Token::ILLEGAL)
