@@ -111,7 +111,8 @@ impl Editor {
         let line_indicator = format!(
             "{}/{}",
             self.cursor_position.y.saturating_add(1),
-            self.document.len()
+            self.offset.y,
+            // self.document.len()
         );
         let len = status.len() + line_indicator.len();
         if width > len {
@@ -157,7 +158,7 @@ impl Editor {
     fn scroll(&mut self) {
         let Position { x, y } = self.cursor_position;
         let width = self.terminal.size().width as usize;
-        let height = self.document.len();
+        let height = self.terminal.size().height as usize;
         let mut offset = &mut self.offset;
         if y < offset.y {
             offset.y = y;
@@ -174,8 +175,7 @@ impl Editor {
     fn move_cursor(&mut self, key: Key) {
         let terminal_height = self.terminal.size().height as usize;
         let Position { mut x, mut y } = self.cursor_position;
-        let size = self.terminal.size();
-        let height = size.height.saturating_sub(1) as usize;
+        let height = self.document.len();
         let mut width = if let Some(row) = self.document.row(y) {
             row.len()
         } else {
