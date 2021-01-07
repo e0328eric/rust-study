@@ -111,8 +111,7 @@ impl Editor {
         let line_indicator = format!(
             "{}/{}",
             self.cursor_position.y.saturating_add(1),
-            self.offset.y,
-            // self.document.len()
+            self.document.len()
         );
         let len = status.len() + line_indicator.len();
         if width > len {
