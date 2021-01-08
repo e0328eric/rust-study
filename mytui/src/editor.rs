@@ -42,7 +42,7 @@ pub struct Editor {
 impl Editor {
     pub fn default() -> Self {
         let args: Vec<String> = env::args().collect();
-        let mut initial_status = String::from("HELPL Ctrl-Q = quit");
+        let mut initial_status = String::from("HELP: Ctrl-Q = quit");
         let document = if args.len() > 1 {
             let file_name = &args[1];
             let doc = Document::open(&file_name);
@@ -174,7 +174,7 @@ impl Editor {
     fn move_cursor(&mut self, key: Key) {
         let terminal_height = self.terminal.size().height as usize;
         let Position { mut x, mut y } = self.cursor_position;
-        let height = self.document.len();
+        let height = self.document.len() + terminal_height / 2;
         let mut width = if let Some(row) = self.document.row(y) {
             row.len()
         } else {
