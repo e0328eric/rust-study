@@ -1,2 +1,3 @@
 */target/
 ./proc-macro-workshop/*/target/
+./3d-wasm/node_modules/*
