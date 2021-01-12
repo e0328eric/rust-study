@@ -2,17 +2,9 @@
 # It is not intended for manual editing.
 [[package]]
 name = "libc"
-version = "0.2.81"
+version = "0.2.82"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1482821306169ec4d07f6aca392a4681f66c75c9918aa49641a2595db64053cb"
-
-[[package]]
-name = "mytui"
-version = "0.1.0"
-dependencies = [
- "termion",
- "unicode-segmentation",
-]
+checksum = "89203f3fba0a3795506acaad8ebce3c80c0af93f994d5a1d7a0b1eeb23271929"
 
 [[package]]
 name = "numtoa"
@@ -36,6 +28,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "socoban-cli"
+version = "0.1.0"
+dependencies = [
+ "termion",
+]
+
+[[package]]
 name = "termion"
 version = "1.5.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -46,9 +45,3 @@ dependencies = [
  "redox_syscall",
  "redox_termios",
 ]
-
-[[package]]
-name = "unicode-segmentation"
-version = "1.7.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bb0d2e7be6ae3a5fa87eed5fb451aff96f2573d2694942e40543ae0bbe19c796"
