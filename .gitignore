@@ -1,3 +1,4 @@
 */target/
 ./proc-macro-workshop/*/target/
 */node_modules/
+./.DS_Store
