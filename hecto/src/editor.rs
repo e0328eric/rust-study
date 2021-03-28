@@ -21,10 +21,19 @@ struct StatusMessage {
     time: Instant,
 }
 
-impl StatusMessage {
-    fn from(message: String) -> Self {
+impl From<String> for StatusMessage {
+    fn from(msg: String) -> Self {
         Self {
-            text: message,
+            text: msg,
+            time: Instant::now(),
+        }
+    }
+}
+
+impl From<&str> for StatusMessage {
+    fn from(msg: &str) -> Self {
+        Self {
+            text: msg.to_string(),
             time: Instant::now(),
         }
     }
@@ -42,7 +51,7 @@ pub struct Editor {
 impl Default for Editor {
     fn default() -> Self {
         let args: Vec<String> = env::args().collect();
-        let mut initial_status = String::from("HELP: Ctrl-Q = quit");
+        let mut initial_status = String::from("HELP: Ctrl-S = save | Ctrl-Q = quit");
         let document = if args.len() > 1 {
             let file_name = &args[1];
             let doc = Document::open(&file_name);
@@ -144,6 +153,27 @@ impl Editor {
         let pressed_key = Terminal::read_key()?;
         match pressed_key {
             Key::Ctrl('q') => self.should_quit = true,
+            Key::Ctrl('s') => {
+                if self.document.file_name.is_none() {
+                    self.document.file_name = Some(self.prompt("Save as: ")?);
+                }
+                if self.document.save().is_ok() {
+                    self.status_message = StatusMessage::from("File saved successfully.");
+                } else {
+                    self.status_message = StatusMessage::from("Error writing file!");
+                }
+            }
+            Key::Char(c) => {
+                self.document.insert(&self.cursor_position, c);
+                self.move_cursor(Key::Right);
+            }
+            Key::Delete => self.document.delete(&self.cursor_position),
+            Key::Backspace => {
+                if self.cursor_position.x > 0 || self.cursor_position.y > 0 {
+                    self.move_cursor(Key::Left);
+                    self.document.delete(&self.cursor_position);
+                }
+            }
             Key::Up
             | Key::Down
             | Key::Left
@@ -156,6 +186,25 @@ impl Editor {
         }
         self.scroll();
         Ok(())
+    }
+
+    fn prompt(&mut self, prompt: &str) -> std::io::Result<String> {
+        let mut result = String::new();
+        loop {
+            self.status_message = StatusMessage::from(format!("{}{}", prompt, result));
+            self.refresh_screen()?;
+            if let Key::Char(c) = Terminal::read_key()? {
+                if c == '\n' {
+                    self.status_message = StatusMessage::from(String::new());
+                    break;
+                }
+                if !c.is_control() {
+                    result.push(c);
+                }
+            }
+        }
+
+        Ok(result)
     }
 
     fn scroll(&mut self) {
