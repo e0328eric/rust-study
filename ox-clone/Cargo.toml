@@ -1,0 +1,22 @@
+[package]
+name = "ox-clone"
+version = "0.1.0"
+authors = ["Almagest <almagest0328@gmail.com>"]
+edition = "2018"
+
+[profile.release]
+lto = true
+panic = "abort"
+codegen-units = 1
+
+[dependencies]
+unicode-segmentation = "1.6.0"
+unicode-width = "0.1.8"
+clap = "2.33.3"
+shellexpand = "2.0.0"
+ron = "0.6.2"
+serde = "1.0.117"
+regex = "1.4.2"
+directories = "3.0.1"
+crossterm = "0.19.0"
+term = "0.7"
