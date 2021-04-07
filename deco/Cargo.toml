@@ -3,7 +3,17 @@ name = "deco"
 version = "0.1.0"
 authors = ["Almagest <almagest0328@gmail.com>"]
 edition = "2018"
+description = "A kilo editor written in Rust"
+include = ["src/*.rs", "Cargo.toml"]
+keywords = ["text-editor", "editor", "terminal", "tui"]
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[profile.release]
+lto = true
+panic = "abort"
+codegen-units = 1
 
 [dependencies]
+termion = "1.5"
+unicode-segmentation = "1.6"
+serde = "^1.0.125"
+toml = "0.5"
