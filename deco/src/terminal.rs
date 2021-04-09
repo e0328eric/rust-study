@@ -1,6 +1,6 @@
 use crate::term_ansi::*;
-use libc::{tcgetattr, tcsetattr, termios, STDIN_FILENO};
-use std::io::{Read, Write};
+use libc::{ioctl, tcgetattr, tcsetattr, termios, STDIN_FILENO, STDOUT_FILENO};
+use std::io::{self, Read, Write};
 use std::mem::MaybeUninit;
 use std::process::exit;
 
@@ -58,6 +58,28 @@ impl Terminal {
         unsafe {
             die!(tcsetattr(STDIN_FILENO, libc::TCSAFLUSH, &self.term); "tcsetattr");
         }
+    }
+
+    pub fn get_window_size() -> io::Result<(usize, usize)> {
+        let mut ws = MaybeUninit::<libc::winsize>::uninit();
+
+        // SAFETY: ioctl is a (maybe?) save C function
+        if unsafe { ioctl(STDOUT_FILENO, libc::TIOCGWINSZ, &mut ws) } == -1 {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                "Cannot get window size",
+            ));
+        }
+        // SAFETY: As we initialize ws at the above, we can use assume_init
+        let ws = unsafe { ws.assume_init() };
+        if ws.ws_col == 0 {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                "Cannot get window size",
+            ));
+        }
+
+        Ok((ws.ws_row as usize, ws.ws_col as usize))
     }
 
     /*** Input ***/

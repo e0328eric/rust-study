@@ -1,3 +1,4 @@
+mod editor;
 mod term_ansi;
 mod terminal;
 
