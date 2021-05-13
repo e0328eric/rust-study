@@ -72,8 +72,38 @@ impl SDL_Window {
     }
 }
 
+impl Drop for SDL_Window {
+    fn drop(&mut self) {
+        unsafe {
+            SDL_DestroyWindow(self.raw);
+        }
+    }
+}
+
 struct SDL_Renderer {
     raw: *mut Raw_SDL_Renderer,
+}
+
+impl SDL_Renderer {
+    fn create(window: &mut SDL_Window, index: i32, flags: u32) -> Result<Self, String> {
+        let raw = unsafe { SDL_CreateRenderer(window.raw, index, flags) };
+        if raw.is_null() {
+            Err(format!(
+                "Could not create SDL Renderer: {}",
+                unsafe { CStr::from_ptr(SDL_GetError()) }.to_string_lossy()
+            ))
+        } else {
+            Ok(Self { raw })
+        }
+    }
+}
+
+impl Drop for SDL_Renderer {
+    fn drop(&mut self) {
+        unsafe {
+            SDL_DestoryRenderer(self.raw);
+        }
+    }
 }
 
 fn main() {
